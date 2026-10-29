@@ -2,6 +2,8 @@
 
 ## 0.2.0 — 2026-10-29
 
+- Second review round: `--base` must be a plain git ref (checked by the command and the runtime); `--focus-file` is
+  kept unless `--delete-focus-file` is passed; `cancel` waits until the whole process group is gone.
 - Security hardening after an adversarial review: task and focus text travel in files (no shell interpolation);
   job ids are validated; job store is private (umask 077, no symlinks); background jobs run in their own process
   group and `cancel` checks the process identity before signalling; `--add-dir` handles spaces; review reports git

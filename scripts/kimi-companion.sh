@@ -7,7 +7,7 @@
 #   kimi-companion.sh task [--cwd DIR] [--add-dir DIR]... [--write | --read-only] [--model MODEL] [--background]
 #                          [--swarm] [--resume-last | --resume JOB] [--label TEXT]
 #                          [--prompt-file FILE [--delete-prompt-file] | -- PROMPT... | -]
-#   kimi-companion.sh review [--base REF] [--model MODEL] [--background] [--focus-file FILE | FOCUS...]
+#   kimi-companion.sh review [--base REF] [--model MODEL] [--background] [--focus-file FILE [--delete-focus-file] | FOCUS...]
 #   kimi-companion.sh adversarial-review [same options as review]
 #   kimi-companion.sh status [JOB] [--all]
 #   kimi-companion.sh result [JOB | --last]
@@ -277,19 +277,24 @@ cmd_cancel() {
   [ "$(state "$1")" = running ] || { echo "job $1 is not running ($(state "$1"))"; return 0; }
   alive "$d" || { echo "job $1 is not running"; return 0; }
   pid=$(cat "$d/pid"); pgid=$(cat "$d/pgid" 2>/dev/null || true)
-  if [ -n "$pgid" ]; then kill -TERM -- "-$pgid" 2>/dev/null; else pkill -TERM -P "$pid" 2>/dev/null; kill -TERM "$pid" 2>/dev/null; fi
-  for i in 1 2 3 4 5 6 7 8 9 10; do alive "$d" || break; sleep 0.5; done
-  if alive "$d"; then
-    if [ -n "$pgid" ]; then kill -KILL -- "-$pgid" 2>/dev/null; else kill -KILL "$pid" 2>/dev/null; fi
-    sleep 0.5
+  if [ -n "$pgid" ]; then
+    group_alive() { kill -0 -- "-$pgid" 2>/dev/null; }
+    kill -TERM -- "-$pgid" 2>/dev/null
+    for i in 1 2 3 4 5 6 7 8 9 10; do group_alive || break; sleep 0.5; done
+    group_alive && { kill -KILL -- "-$pgid" 2>/dev/null; sleep 0.5; }
+    if group_alive; then echo "could not stop every process of job $1 (process group $pgid)"; return 1; fi
+  else   # foreground job started from another shell: stop it and its children
+    pkill -TERM -P "$pid" 2>/dev/null; kill -TERM "$pid" 2>/dev/null
+    for i in 1 2 3 4 5 6 7 8 9 10; do alive "$d" || break; sleep 0.5; done
+    alive "$d" && { pkill -KILL -P "$pid" 2>/dev/null; kill -KILL "$pid" 2>/dev/null; sleep 0.5; }
+    if alive "$d"; then echo "could not stop job $1 (pid $pid)"; return 1; fi
   fi
-  if alive "$d"; then echo "could not stop job $1 (pid $pid)"; return 1; fi
   echo cancelled > "$d/state"; echo "cancelled: $1"
 }
 
 cmd_review() {  # cmd_review review|adversarial-review [--base REF] [--cwd DIR] [--model M] [--background] [--focus-file F | FOCUS...]
   local kind="$1"; shift
-  local base="" cwd="$PWD" pass=() focus="" focus_file=""
+  local base="" cwd="$PWD" pass=() focus="" focus_file="" delete_focus=0
   while [ $# -gt 0 ]; do
     case "$1" in
       --base) need_value $# "$1"; base="$2"; shift 2 ;;
@@ -299,12 +304,14 @@ cmd_review() {  # cmd_review review|adversarial-review [--base REF] [--cwd DIR] 
       --background|--wait) pass+=("$1"); shift ;;
       --swarm) die "reviews are read-only and Kimi swarms need --write; use /kimi:task --write --swarm for a swarm audit" ;;
       --focus-file) need_value $# "$1"; focus_file="$2"; shift 2 ;;
+      --delete-focus-file) delete_focus=1; shift ;;
       --) shift; break ;;
       -*) die "unknown option: $1" ;;
       *) break ;;
     esac
   done
-  if [ -n "$focus_file" ]; then focus="$(cat -- "$focus_file")" || die "cannot read $focus_file"; rm -f -- "$focus_file"
+  if [ -n "$focus_file" ]; then focus="$(cat -- "$focus_file")" || die "cannot read $focus_file"
+    [ "$delete_focus" = 1 ] && rm -f -- "$focus_file"
   else focus="${*:-}"; fi
   [ -n "$focus" ] || focus="none given"
   git -C "$cwd" rev-parse --show-toplevel >/dev/null 2>&1 || die "not a git repository: $cwd"
@@ -312,6 +319,7 @@ cmd_review() {  # cmd_review review|adversarial-review [--base REF] [--cwd DIR] 
   local ctx target max=180000 rc
   ctx="$(mktemp "${TMPDIR:-/tmp}/kimi-review.XXXXXX")" || die "mktemp failed"
   if [ -n "$base" ]; then
+    [[ "$base" =~ ^[A-Za-z0-9._/@~^-]+$ ]] || { rm -f "$ctx"; die "invalid git ref: $base"; }
     git -C "$cwd" rev-parse --verify --quiet "$base^{commit}" >/dev/null || { rm -f "$ctx"; die "unknown git ref: $base"; }
     git -C "$cwd" diff --quiet "$base...HEAD"; rc=$?
     [ "$rc" -gt 1 ] && { rm -f "$ctx"; die "git diff failed for $base...HEAD"; }

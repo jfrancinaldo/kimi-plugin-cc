@@ -14,7 +14,7 @@ Call it as `bash "${CLAUDE_PLUGIN_ROOT}/scripts/kimi-companion.sh" <command> ...
 | Command | What it does |
 |---|---|
 | `task [opts] -- <prompt>` | Run a delegated task. Prompt can also come from `--prompt-file F` or stdin (`-`). |
-| `review [--base REF] [focus]` | Read-only code review of the working tree (or `REF...HEAD`). |
+| `review [--base REF] [--focus-file F [--delete-focus-file]] [focus]` | Read-only code review of the working tree (or `REF...HEAD`). |
 | `adversarial-review [--base REF] [focus]` | Read-only review that tries to find reasons not to ship. |
 | `status [JOB] [--all]` | Jobs for the current directory (or one job in detail). |
 | `result [JOB\|--last]` | Final answer of a finished job. Exit 2 while still running. |
