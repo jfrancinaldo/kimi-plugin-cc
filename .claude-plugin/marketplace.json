@@ -1,0 +1,15 @@
+{
+  "name": "kimi-plugin-cc",
+  "owner": {
+    "name": "jfrancinaldo"
+  },
+  "plugins": [
+    {
+      "name": "kimi",
+      "source": "./",
+      "description": "Use Kimi (Moonshot AI) from Claude Code to review code or delegate tasks.",
+      "version": "0.1.0"
+    }
+  ],
+  "description": "Kimi (Moonshot AI) as a second engineer inside Claude Code: delegate tasks and get code reviews."
+}
