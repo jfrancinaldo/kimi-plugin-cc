@@ -37,19 +37,22 @@ your `PATH`, set `KIMI_BIN` (the installer puts it in `~/.kimi-code/bin/kimi`, w
 | read-only (default) | `--read-only` | read and search files and the web — runs with a restricted agent profile ([profiles/read-only.md](profiles/read-only.md)) that has no Write, Edit or shell |
 | write | `--write` | every Kimi tool, including shell commands, **without asking** — the CLI has no finer mode in prompt mode |
 
-A resumed session (`--resume`) keeps the tools it was created with. Kimi never pushes, deploys or publishes unless
-the task explicitly says so, and always ends with a `## Result` section.
+A resumed session (`--resume`) keeps the tools it was created with, so asking to resume a write session as
+read-only (or the reverse) is refused — start a new job instead. Kimi is *instructed* not to push, deploy or publish
+unless the task says so, and to end with a `## Result` section; these are prompt instructions, not enforced
+guarantees — the permission modes above are what is enforced. The task text is passed to `kimi -p` as an argument,
+so it is visible in the local process list while the job runs: keep secrets out of prompts.
 
 ## Swarm mode (`--swarm`)
 
 Kimi can spawn its own subagents. With `--swarm` it splits a large task into independent parts, runs them in
-parallel and merges the results into one report — useful for audits across many files, multi-module refactors or
-research with several sources. In read-only mode only the read-only `explore` and `plan` subagents are allowed ([profiles/read-only-swarm.md](profiles/read-only-swarm.md)).
-Swarms finish faster on wide tasks but use more tokens.
+parallel and merges the results into one report — useful for multi-module work or research with several sources.
+**Swarm requires `--write`:** Kimi's built-in subagents (`explore`, `plan`, `coder`) carry their own tools,
+including shell, so a read-only parent cannot keep them read-only. Swarms finish faster on wide tasks but use more
+tokens.
 
 ```text
-/kimi:rescue --swarm --background audit every route in src/routes for missing auth checks
-/kimi:adversarial-review --swarm --base main
+/kimi:task --write --swarm --background add tests for every module in src/ and run them
 ```
 
 ## Configuration
@@ -59,7 +62,7 @@ Swarms finish faster on wide tasks but use more tokens.
 | `KIMI_BIN` | `kimi` on `PATH`, then `~/.kimi-code/bin/kimi` |
 | `KIMI_MODEL` | the CLI's `default_model` |
 | `KIMI_COMPANION_HOME` | `~/.kimi-companion` (jobs) |
-| `KIMI_COMPANION_RULES` | `~/.config/kimi-companion/rules.md` — your own rules, prepended to every task |
+| `KIMI_COMPANION_RULES` | `~/.config/kimi-companion/rules.md` — your own rules, prepended to every task (the content is sent to the model; no secrets) |
 
 ## Using the runtime directly
 
@@ -73,7 +76,8 @@ bash scripts/kimi-companion.sh result --last
 
 Plugin para usar o **Kimi (Moonshot AI)** dentro do Claude Code: revisar código ou receber tarefas pesadas em
 segundo plano, como o plugin do Codex. Precisa do Kimi Code CLI com login (`kimi login`). Regras da sua equipe vão
-em `~/.config/kimi-companion/rules.md` (ficam só na sua máquina).
+em `~/.config/kimi-companion/rules.md`: o arquivo não vai para o repositório, mas o conteúdo é enviado ao modelo a
+cada tarefa (não coloque segredos nele).
 
 ## License
 

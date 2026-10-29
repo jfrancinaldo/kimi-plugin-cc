@@ -24,7 +24,7 @@ Call it as `bash "${CLAUDE_PLUGIN_ROOT}/scripts/kimi-companion.sh" <command> ...
 Task options: `--read-only` (default: a restricted agent profile with only Read, Grep, Glob, FetchURL, WebSearch,
 TodoList), `--write` (every Kimi tool, including shell, runs without asking — the CLI has no finer mode in prompt
 mode), `--cwd DIR`, `--add-dir DIR`, `--model ALIAS`, `--background`, `--resume-last` / `--resume JOB` (a resumed
-session keeps the tools it was created with), `--label TEXT`, `--swarm` (let the model fan the task out to its own parallel subagents; read-only stays read-only).
+session keeps the tools it was created with), `--label TEXT`, `--swarm` (let Kimi fan the task out to its own parallel subagents; requires `--write`, because Kimi's subagents have shell access).
 
 ## Writing a good Kimi prompt
 

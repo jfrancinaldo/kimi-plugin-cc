@@ -1,10 +1,19 @@
 ---
 description: Show active and recent Kimi jobs for this directory (or one job in detail)
 argument-hint: '[job-id] [--all]'
-disable-model-invocation: true
 allowed-tools: Bash(bash:*)
 ---
 
-!`bash "${CLAUDE_PLUGIN_ROOT}/scripts/kimi-companion.sh" status $ARGUMENTS`
+Raw arguments: `$ARGUMENTS`
 
-Without a job id: render the output as one compact Markdown table. With a job id: show the full output as-is.
+Accept only these argument forms and refuse anything else without running a command:
+- empty, `--all`
+- a job id matching `^kimi-[0-9]{8}-[0-9]{6}-[0-9]+$` (optionally preceded by `--all`)
+
+Then run exactly one Bash call:
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/kimi-companion.sh" status <validated arguments>
+```
+
+Without a job id, render the output as one compact Markdown table; with a job id, show it as-is.

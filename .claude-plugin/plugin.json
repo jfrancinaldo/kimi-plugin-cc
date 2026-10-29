@@ -1,6 +1,6 @@
 {
   "name": "kimi",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Use Kimi (Moonshot AI) from Claude Code to review code or delegate tasks, as a tracked background helper.",
   "author": { "name": "jfrancinaldo" },
   "license": "MIT",

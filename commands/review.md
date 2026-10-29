@@ -1,22 +1,23 @@
 ---
-description: Run a read-only Kimi (Moonshot AI) code review of the local git changes
+description: Run a read-only Kimi code review of the local git changes
 argument-hint: '[--wait|--background] [--base <ref>] [focus text]'
-allowed-tools: Bash(bash:*), Bash(git:*), AskUserQuestion
+allowed-tools: Bash(bash:*), Bash(git status:*), Bash(git diff:*), Write, AskUserQuestion
 ---
 
-Run a Kimi review of the current repository. This command is review-only: do not fix anything yourself.
+Run a Kimi review of the current repository. Review-only: do not fix anything yourself.
 
 Raw arguments: `$ARGUMENTS`
 
-1. Estimate the size: `git status --short --untracked-files=all` and `git diff --shortstat HEAD` (or
-   `git diff --shortstat <base>...HEAD` when `--base` is given). If there is nothing to review, say so and stop.
-2. If neither `--wait` nor `--background` was given, ask once with `AskUserQuestion`: `Wait for results` or
-   `Run in background`, recommending wait only for a tiny change (1–2 files).
-3. Run:
+1. Split the arguments into flags (`--wait`, `--background`, `--base <ref>`) and the focus text (the rest).
+2. Estimate the size: `git status --short --untracked-files=all` and `git diff --shortstat HEAD` (or
+   `git diff --shortstat <base>...HEAD` with `--base`). Nothing to review → say so and stop.
+3. Without `--wait`/`--background`, ask once with `AskUserQuestion`: `Wait for results` or `Run in background`
+   (recommend waiting only for a tiny change of 1–2 files).
+4. If there is focus text, write it unchanged to `/tmp/kimi-focus-<8 random hex characters>.md` with the **Write tool**.
+5. Run exactly one Bash call, wrapping the `--base` value in single quotes:
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/kimi-companion.sh" review $ARGUMENTS
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/kimi-companion.sh" review <flags> [--focus-file '<file from step 4>']
 ```
 
-   For background, add `--background` and tell the user to check `/kimi:status` and `/kimi:result`.
-4. Return Kimi's output verbatim. Do not apply fixes unless the user asks afterwards.
+6. Return Kimi's output verbatim. Apply fixes only if the user asks afterwards.
